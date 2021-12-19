@@ -92,6 +92,11 @@ export type BitbucketIntegrationConfig = {
   appPassword?: string;
 };
 
+// Warning: (ae-incompatible-release-tags) The symbol "defaultScmParseUrl" is marked as @public, but its signature references "ScmLocation" which is marked as @alpha
+//
+// @public
+export function defaultScmParseUrl(url: string): ScmLocation;
+
 // @public
 export function defaultScmResolveUrl(options: {
   url: string;
@@ -371,6 +376,8 @@ export interface ScmIntegrationRegistry
   github: ScmIntegrationsGroup<GitHubIntegration>;
   // (undocumented)
   gitlab: ScmIntegrationsGroup<GitLabIntegration>;
+  // Warning: (ae-incompatible-release-tags) The symbol "parseUrl" is marked as @public, but its signature references "ScmLocation" which is marked as @alpha
+  parseUrl(url: string): ScmLocation;
   resolveEditUrl(url: string): string;
   resolveUrl(options: {
     url: string;
@@ -400,6 +407,10 @@ export class ScmIntegrations implements ScmIntegrationRegistry {
   get gitlab(): ScmIntegrationsGroup<GitLabIntegration>;
   // (undocumented)
   list(): ScmIntegration[];
+  // Warning: (ae-incompatible-release-tags) The symbol "parseUrl" is marked as @public, but its signature references "ScmLocation" which is marked as @alpha
+  //
+  // (undocumented)
+  parseUrl(url: string): ScmLocation;
   // (undocumented)
   resolveEditUrl(url: string): string;
   // (undocumented)
@@ -421,6 +432,24 @@ export interface ScmIntegrationsGroup<T extends ScmIntegration> {
   byUrl(url: string | URL): T | undefined;
   list(): T[];
 }
+
+// @alpha
+export type ScmLocation = {
+  url: {
+    host: string;
+    root: string;
+  };
+  repository: {
+    organization: string | undefined;
+    owner: string;
+    name: string;
+  };
+  target: {
+    ref: string | undefined;
+    path: string | undefined;
+    pathType: string | undefined;
+  };
+};
 
 // @public
 export class SingleInstanceGithubCredentialsProvider
