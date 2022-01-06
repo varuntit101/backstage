@@ -24,6 +24,7 @@ import {
 } from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
 import { NotFoundError } from '@backstage/errors';
+import { IdentityClient } from '@backstage/plugin-auth-backend';
 import { RESOURCE_TYPE_CATALOG_ENTITY } from '@backstage/plugin-catalog-common';
 import {
   createPermissionIntegrationRouter,
@@ -100,6 +101,9 @@ export async function createNextRouter(
       )
       .get('/entities', async (req, res) => {
         const { entities, pageInfo } = await entitiesCatalog.entities({
+          authorizationToken: IdentityClient.getBearerToken(
+            req.header('authorization'),
+          ),
           filter: parseEntityFilterParams(req.query),
           fields: parseEntityTransformParams(req.query),
           pagination: parseEntityPaginationParams(req.query),
@@ -134,6 +138,9 @@ export async function createNextRouter(
       .get('/entities/by-name/:kind/:namespace/:name', async (req, res) => {
         const { kind, namespace, name } = req.params;
         const { entities } = await entitiesCatalog.entities({
+          authorizationToken: IdentityClient.getBearerToken(
+            req.header('authorization'),
+          ),
           filter: basicEntityFilter({
             kind: kind,
             'metadata.namespace': namespace,
@@ -210,13 +217,16 @@ async function getEntityResource(
 ): Promise<Entity | undefined> {
   const parsed = parseEntityRef(resourceRef);
 
-  const { entities } = await entitiesCatalog.entities({
-    filter: basicEntityFilter({
-      kind: parsed.kind,
-      'metadata.namespace': parsed.namespace,
-      'metadata.name': parsed.name,
-    }),
-  });
+  const { entities } = await entitiesCatalog.entities(
+    {
+      filter: basicEntityFilter({
+        kind: parsed.kind,
+        'metadata.namespace': parsed.namespace,
+        'metadata.name': parsed.name,
+      }),
+    },
+    false,
+  );
 
   return entities[0];
 }

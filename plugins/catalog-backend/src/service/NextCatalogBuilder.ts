@@ -387,7 +387,11 @@ export class NextCatalogBuilder {
       parser,
       policy,
     });
-    const entitiesCatalog = new NextEntitiesCatalog(dbClient);
+    const entitiesCatalog = new NextEntitiesCatalog(
+      dbClient,
+      permissions,
+      this.permissionRules,
+    );
     const stitcher = new Stitcher(dbClient, logger);
 
     const locationStore = new DefaultLocationStore(dbClient);
