@@ -478,7 +478,7 @@ describe('NextRouter permissioning', () => {
   it('accepts and evaluates conditions at the apply-conditions endpoint', async () => {
     const spideySense: Entity = {
       apiVersion: 'a',
-      kind: 'b',
+      kind: 'component',
       metadata: {
         name: 'spidey-sense',
       },
@@ -489,15 +489,22 @@ describe('NextRouter permissioning', () => {
     });
 
     const requestBody = {
-      resourceType: 'catalog-entity',
-      resourceRef: 'component:default/spidey-sense',
-      conditions: { rule: 'FAKE_RULE', params: ['user:default/spiderman'] },
+      items: [
+        {
+          id: '123',
+          resourceType: 'catalog-entity',
+          resourceRef: 'component:default/spidey-sense',
+          conditions: { rule: 'FAKE_RULE', params: ['user:default/spiderman'] },
+        },
+      ],
     };
     const response = await request(app)
       .post('/.well-known/backstage/permissions/apply-conditions')
       .send(requestBody);
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ result: AuthorizeResult.ALLOW });
+    expect(response.body).toEqual({
+      items: [{ id: '123', result: AuthorizeResult.ALLOW }],
+    });
   });
 });

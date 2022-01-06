@@ -28,6 +28,7 @@ import { RESOURCE_TYPE_CATALOG_ENTITY } from '@backstage/plugin-catalog-common';
 import { createPermissionIntegrationRouter } from '@backstage/plugin-permission-node';
 import express from 'express';
 import Router from 'express-promise-router';
+import { keyBy } from 'lodash';
 import { Logger } from 'winston';
 import yn from 'yn';
 import { EntitiesCatalog } from '../catalog';
@@ -87,8 +88,8 @@ export async function createNextRouter(
       .use(
         createPermissionIntegrationRouter({
           resourceType: RESOURCE_TYPE_CATALOG_ENTITY,
-          getResource: resourceRef =>
-            getEntityResource(resourceRef, entitiesCatalog),
+          getResources: resourceRefs =>
+            getEntityResources(resourceRefs, entitiesCatalog),
           rules: permissionRules ?? [],
         }),
       )
@@ -198,19 +199,28 @@ export async function createNextRouter(
   return router;
 }
 
-async function getEntityResource(
-  resourceRef: string,
+async function getEntityResources(
+  resourceRefs: string[],
   entitiesCatalog: EntitiesCatalog,
-): Promise<Entity | undefined> {
-  const parsed = parseEntityRef(resourceRef);
-
+): Promise<Array<Entity | undefined>> {
   const { entities } = await entitiesCatalog.entities({
-    filter: basicEntityFilter({
-      kind: parsed.kind,
-      'metadata.namespace': parsed.namespace,
-      'metadata.name': parsed.name,
-    }),
+    filter: {
+      anyOf: resourceRefs.map(resourceRef => {
+        const { kind, namespace, name } = parseEntityRef(resourceRef);
+
+        return basicEntityFilter({
+          kind,
+          'metadata.namespace': namespace,
+          'metadata.name': name,
+        });
+      }),
+    },
   });
 
-  return entities[0];
+  const entitiesByRef = keyBy(entities, stringifyEntityRef);
+
+  return resourceRefs.map(
+    resourceRef =>
+      entitiesByRef[stringifyEntityRef(parseEntityRef(resourceRef))],
+  );
 }
