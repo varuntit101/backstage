@@ -83,22 +83,24 @@ describe('createRouter', () => {
     it('calls the permission policy', async () => {
       const response = await request(app)
         .post('/authorize')
-        .send([
-          {
-            id: '123',
-            permission: {
-              name: 'test.permission1',
-              attributes: {},
+        .send({
+          items: [
+            {
+              id: '123',
+              permission: {
+                name: 'test.permission1',
+                attributes: {},
+              },
             },
-          },
-          {
-            id: '234',
-            permission: {
-              name: 'test.permission2',
-              attributes: {},
+            {
+              id: '234',
+              permission: {
+                name: 'test.permission2',
+                attributes: {},
+              },
             },
-          },
-        ]);
+          ],
+        });
 
       expect(response.status).toEqual(200);
 
@@ -121,10 +123,12 @@ describe('createRouter', () => {
         undefined,
       );
 
-      expect(response.body).toEqual([
-        { id: '123', result: AuthorizeResult.DENY },
-        { id: '234', result: AuthorizeResult.DENY },
-      ]);
+      expect(response.body).toEqual({
+        items: [
+          { id: '123', result: AuthorizeResult.DENY },
+          { id: '234', result: AuthorizeResult.DENY },
+        ],
+      });
     });
 
     it('resolves identity from the Authorization header', async () => {
@@ -132,15 +136,17 @@ describe('createRouter', () => {
       const response = await request(app)
         .post('/authorize')
         .auth(token, { type: 'bearer' })
-        .send([
-          {
-            id: '123',
-            permission: {
-              name: 'test.permission',
-              attributes: {},
+        .send({
+          items: [
+            {
+              id: '123',
+              permission: {
+                name: 'test.permission',
+                attributes: {},
+              },
             },
-          },
-        ]);
+          ],
+        });
 
       expect(response.status).toEqual(200);
       expect(policy.handle).toHaveBeenCalledWith(
@@ -152,9 +158,9 @@ describe('createRouter', () => {
         },
         { id: 'test-user', token: 'test-token' },
       );
-      expect(response.body).toEqual([
-        { id: '123', result: AuthorizeResult.ALLOW },
-      ]);
+      expect(response.body).toEqual({
+        items: [{ id: '123', result: AuthorizeResult.ALLOW }],
+      });
     });
 
     describe('conditional policy result', () => {
@@ -172,25 +178,29 @@ describe('createRouter', () => {
       it('returns conditions if no resourceRef is supplied', async () => {
         const response = await request(app)
           .post('/authorize')
-          .send([
-            {
-              id: '123',
-              permission: {
-                name: 'test.permission',
-                resourceType: 'test-resource-1',
-                attributes: {},
+          .send({
+            items: [
+              {
+                id: '123',
+                permission: {
+                  name: 'test.permission',
+                  resourceType: 'test-resource-1',
+                  attributes: {},
+                },
               },
-            },
-          ]);
+            ],
+          });
 
         expect(response.status).toEqual(200);
-        expect(response.body).toEqual([
-          {
-            id: '123',
-            result: AuthorizeResult.CONDITIONAL,
-            conditions: { anyOf: [{ rule: 'test-rule', params: ['abc'] }] },
-          },
-        ]);
+        expect(response.body).toEqual({
+          items: [
+            {
+              id: '123',
+              result: AuthorizeResult.CONDITIONAL,
+              conditions: { anyOf: [{ rule: 'test-rule', params: ['abc'] }] },
+            },
+          ],
+        });
       });
 
       it.each<ApplyConditionsResponse['result']>([
@@ -206,17 +216,19 @@ describe('createRouter', () => {
           const response = await request(app)
             .post('/authorize')
             .auth('test-token', { type: 'bearer' })
-            .send([
-              {
-                id: '123',
-                resourceRef: 'test/resource',
-                permission: {
-                  name: 'test.permission',
-                  resourceType: 'test-resource-1',
-                  attributes: {},
+            .send({
+              items: [
+                {
+                  id: '123',
+                  resourceRef: 'test/resource',
+                  permission: {
+                    name: 'test.permission',
+                    resourceType: 'test-resource-1',
+                    attributes: {},
+                  },
                 },
-              },
-            ]);
+              ],
+            });
 
           expect(mockApplyConditions).toHaveBeenCalledWith(
             {
@@ -229,12 +241,14 @@ describe('createRouter', () => {
           );
 
           expect(response.status).toEqual(200);
-          expect(response.body).toEqual([
-            {
-              id: '123',
-              result,
-            },
-          ]);
+          expect(response.body).toEqual({
+            items: [
+              {
+                id: '123',
+                result,
+              },
+            ],
+          });
         },
       );
     });
@@ -244,9 +258,14 @@ describe('createRouter', () => {
       '',
       {},
       [{ permission: { name: 'test.permission', attributes: {} } }],
-      [{ id: '123' }],
-      [{ id: '123', permission: { name: 'test.permission' } }],
-      [{ id: '123', permission: { attributes: { invalid: 'attribute' } } }],
+      { items: [{ permission: { name: 'test.permission', attributes: {} } }] },
+      { items: [{ id: '123' }] },
+      { items: [{ id: '123', permission: { name: 'test.permission' } }] },
+      {
+        items: [
+          { id: '123', permission: { attributes: { invalid: 'attribute' } } },
+        ],
+      },
     ])('returns a 500 error for invalid request %#', async requestBody => {
       const response = await request(app).post('/authorize').send(requestBody);
 
@@ -270,16 +289,18 @@ describe('createRouter', () => {
 
       const response = await request(app)
         .post('/authorize')
-        .send([
-          {
-            id: '123',
-            permission: {
-              name: 'test.permission',
-              resourceType: 'test-resource-1',
-              attributes: {},
+        .send({
+          items: [
+            {
+              id: '123',
+              permission: {
+                name: 'test.permission',
+                resourceType: 'test-resource-1',
+                attributes: {},
+              },
             },
-          },
-        ]);
+          ],
+        });
 
       expect(response.status).toEqual(500);
       expect(response.body).toEqual(

@@ -31,30 +31,34 @@ import {
   AuthorizeResponse,
   AuthorizeRequest,
   Identified,
+  AuthorizeRequestEnvelope,
+  AuthorizeResponseEnvelope,
 } from '@backstage/plugin-permission-common';
 import { PermissionPolicy } from '@backstage/plugin-permission-node';
 import { PermissionIntegrationClient } from './PermissionIntegrationClient';
 
-const requestSchema: z.ZodSchema<Identified<AuthorizeRequest>[]> = z.array(
-  z.object({
-    id: z.string(),
-    resourceRef: z.string().optional(),
-    permission: z.object({
-      name: z.string(),
-      resourceType: z.string().optional(),
-      attributes: z.object({
-        action: z
-          .union([
-            z.literal('create'),
-            z.literal('read'),
-            z.literal('update'),
-            z.literal('delete'),
-          ])
-          .optional(),
+const requestSchema: z.ZodSchema<AuthorizeRequestEnvelope> = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      resourceRef: z.string().optional(),
+      permission: z.object({
+        name: z.string(),
+        resourceType: z.string().optional(),
+        attributes: z.object({
+          action: z
+            .union([
+              z.literal('create'),
+              z.literal('read'),
+              z.literal('update'),
+              z.literal('delete'),
+            ])
+            .optional(),
+        }),
       }),
     }),
-  }),
-);
+  ),
+});
 
 /**
  * Options required when constructing a new {@link express#Router} using
@@ -136,17 +140,19 @@ export async function createRouter(
   router.post(
     '/authorize',
     async (
-      req: Request<Identified<AuthorizeRequest>[]>,
-      res: Response<Identified<AuthorizeResponse>[]>,
+      req: Request<AuthorizeRequestEnvelope>,
+      res: Response<AuthorizeResponseEnvelope>,
     ) => {
       const token = IdentityClient.getBearerToken(req.header('authorization'));
       const user = token ? await identity.authenticate(token) : undefined;
 
       const body = requestSchema.parse(req.body);
 
-      res.json(
-        await Promise.all(
-          body.map(request =>
+      // TODO: allow partial failures, rather than failing the whole
+      // request if any errors occur.
+      res.json({
+        items: await Promise.all(
+          body.items.map(request =>
             handleRequest(
               request,
               user,
@@ -156,7 +162,7 @@ export async function createRouter(
             ),
           ),
         ),
-      );
+      });
     },
   );
 
