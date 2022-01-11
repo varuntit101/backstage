@@ -1,5 +1,17 @@
 # @backstage/core-components
 
+## 0.8.4
+
+### Patch Changes
+
+- de2396da24: Create a short delay when `<SidebarSubmenu/>` is opened
+- 5333451def: Cleaned up API exports
+- e2eb92c109: Updated `ResponseErrorPanel` to not use the deprecated `data` property of `ResponseError`.
+- Updated dependencies
+  - @backstage/config@0.1.12
+  - @backstage/core-plugin-api@0.5.0
+  - @backstage/errors@0.2.0
+
 ## 0.8.3
 
 ### Patch Changes

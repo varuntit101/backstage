@@ -1,5 +1,16 @@
 # @backstage/plugin-permission-node
 
+## 0.2.4
+
+### Patch Changes
+
+- 9db1b86f32: Add helpers for creating PermissionRules with inferred types
+- Updated dependencies
+  - @backstage/config@0.1.12
+  - @backstage/backend-common@0.10.3
+  - @backstage/plugin-auth-backend@0.6.2
+  - @backstage/plugin-permission-common@0.3.1
+
 ## 0.2.3
 
 ### Patch Changes
